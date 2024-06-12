@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 def get_db_connection():
     return mysql.connector.connect(
-        host='localhost',
+        host='mysql',
         user='root',
         password='root',
         database='pariwisata'
@@ -13,23 +13,29 @@ def get_db_connection():
 
 @app.route('/hotels', methods=['GET'])
 def get_hotels():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM hotels")
-    hotels = cursor.fetchall()
-    conn.close()
-    return jsonify(hotels)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM hotels")
+        hotels = cursor.fetchall()
+        conn.close()
+        return jsonify(hotels)
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
 
 @app.route('/hotels', methods=['POST'])
 def add_hotel():
-    data = request.json
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO hotels (name, location, price) VALUES (%s, %s, %s)",
-                   (data['name'], data['location'], data['price']))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "Hotel added"}), 201
+    try:
+        data = request.json
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO hotels (name, location, price) VALUES (%s, %s, %s)",
+                       (data['name'], data['location'], data['price']))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "Hotel added"}), 201
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
 
 @app.route('/hotels/<int:hotel_id>', methods=['PUT'])
 def update_hotel(hotel_id):
